@@ -24,8 +24,10 @@ class MediaStore {
   @visibleForTesting
   static set directory(String? path) => _dir = path;
 
-  static String? pathFor(String basename) =>
-      (_dir == null || basename.isEmpty) ? null : '$_dir/$basename';
+  static String? pathFor(String basename) {
+    if (_dir == null || basename.isEmpty || _unsafePath(basename)) return null;
+    return '$_dir/$basename';
+  }
 
   static Future<String?> importFor(String exerciseId, String srcPath) async {
     if (_dir == null) return null;
@@ -79,13 +81,21 @@ class MediaStore {
 
   static int _seq = 0;
 
+  static bool _unsafePath(String s) =>
+      s.contains('/') || s.contains('\\') || s.contains('..');
+
+  static String _safeToken(String s, String fallback) {
+    final cleaned = s.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '');
+    return cleaned.isEmpty ? fallback : cleaned;
+  }
+
   static String _newName(String exerciseId, String ext) =>
-      '$exerciseId-${DateTime.now().microsecondsSinceEpoch}-${_seq++}.$ext';
+      '${_safeToken(exerciseId, 'media')}-${DateTime.now().microsecondsSinceEpoch}-${_seq++}.${_safeToken(ext, 'dat')}';
 
   static String extOf(String path) {
     final dot = path.lastIndexOf('.');
     if (dot < 0 || dot == path.length - 1) return 'dat';
-    return path.substring(dot + 1).toLowerCase();
+    return _safeToken(path.substring(dot + 1).toLowerCase(), 'dat');
   }
 
   static const videoExtensions = {'mp4', 'mov', 'm4v', 'webm', 'mkv', '3gp', 'avi'};

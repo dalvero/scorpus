@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/workout.dart';
@@ -9,6 +10,7 @@ class Store {
   static final Store instance = Store._();
 
   static const _key = 'scorpus_v1';
+  static const _corruptKey = '${_key}_corrupt';
   SharedPreferences? _prefs;
 
   Future<void> init() async {
@@ -20,8 +22,13 @@ class Store {
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw);
-      return decoded is Map<String, dynamic> ? decoded : {};
-    } catch (_) {
+      if (decoded is Map<String, dynamic>) return decoded;
+      _prefs?.setString(_corruptKey, raw);
+      debugPrint('Store.load: unexpected JSON root type');
+      return {};
+    } catch (e) {
+      _prefs?.setString(_corruptKey, raw);
+      debugPrint('Store.load failed: $e');
       return {};
     }
   }
@@ -30,10 +37,13 @@ class Store {
 
   void setNote(String key, String value) => _prefs?.setString('sc_$key', value);
 
-  Future<void> save(Map<String, dynamic> data) async {
+  Future<bool> save(Map<String, dynamic> data) async {
     try {
-      await _prefs?.setString(_key, jsonEncode(data));
-    } catch (_) {}
+      return await _prefs?.setString(_key, jsonEncode(data)) ?? false;
+    } catch (e) {
+      debugPrint('Store.save failed: $e');
+      return false;
+    }
   }
 
   String exportJson(Map<String, dynamic> data) =>

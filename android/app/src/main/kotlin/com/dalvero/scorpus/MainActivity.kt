@@ -170,8 +170,18 @@ class MainActivity : FlutterActivity() {
 
     private fun readText(uri: Uri): String? = try {
         contentResolver.openInputStream(uri)?.use { stream ->
-            val bytes = stream.readBytes()
-            if (bytes.size > 2_000_000) null else String(bytes, Charsets.UTF_8)
+            val maxBytes = 2_000_000
+            val out = java.io.ByteArrayOutputStream()
+            val buf = ByteArray(8192)
+            var total = 0
+            while (true) {
+                val n = stream.read(buf)
+                if (n < 0) break
+                total += n
+                if (total > maxBytes) return null
+                out.write(buf, 0, n)
+            }
+            String(out.toByteArray(), Charsets.UTF_8)
         }
     } catch (e: Exception) {
         null
@@ -203,11 +213,18 @@ class MainActivity : FlutterActivity() {
             val resolver = contentResolver
             val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
                 ?: return false
-            resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: return false
-            values.clear()
-            values.put(MediaStore.Images.Media.IS_PENDING, 0)
-            resolver.update(uri, values, null, null)
-            return true
+            try {
+                val stream = resolver.openOutputStream(uri)
+                    ?: throw IllegalStateException("Cannot open output stream")
+                stream.use { it.write(bytes) }
+                values.clear()
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                return true
+            } catch (e: Exception) {
+                resolver.delete(uri, null, null)
+                return false
+            }
         }
 
         val dir = File(

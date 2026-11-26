@@ -48,82 +48,86 @@ class FitState extends FitCore
   void loadFromStore() {
     final data = Store.instance.load();
     _loading = true;
-    if (data['language'] == null) _adoptDeviceLanguage();
-    if (data.isNotEmpty) {
-      profile = Profile.fromJson((data['profile'] as Map?)?.cast<String, dynamic>() ?? {});
-      if (const {'Athlete', 'Atleta', 'Name'}.contains(profile.name)) {
-        profile.name = kDefaultName;
+    try {
+      if (data['language'] == null) _adoptDeviceLanguage();
+      if (data.isNotEmpty) {
+        profile = Profile.fromJson((data['profile'] as Map?)?.cast<String, dynamic>() ?? {});
+        if (const {'Athlete', 'Atleta', 'Name'}.contains(profile.name)) {
+          profile.name = kDefaultName;
+        }
+
+        themePref = _themeFrom(data, fallback: 'dark');
+        units = data['units'] as String? ?? 'kg';
+
+        _applyLanguage(data['language'] as String? ?? language);
+        restSeconds = (data['rest'] as num?)?.toInt() ?? 90;
+        alarmSound = data['alarmSound'] as String?;
+        alarmSoundName = data['alarmSoundName'] as String?;
+        RestAlarm.instance.customSoundPath = alarmSoundPath;
+
+        if (alarmSoundPath == null) {
+          alarmSound = null;
+          alarmSoundName = null;
+        }
+        bgPattern = data['bg'] as String? ?? 'dots';
+        heatTone = data['heatTone'] as String? ?? 'ember';
+        _loadToggles(data);
+        alarmAskedAt = (data['alarmAskedAt'] as num?)?.toInt();
+        onboarded = data['onboarded'] as bool? ?? false;
+        favorites
+          ..clear()
+          ..addAll(((data['favorites'] as Map?) ?? {}).map((k, v) => MapEntry(k as String, v as bool)));
+        _loadNotes(data);
+        _loadPlaces(data);
+        checkins
+          ..clear()
+          ..addAll(((data['checkins'] as List?) ?? []).cast<String>());
+        routines
+          ..clear()
+          ..addAll(((data['routines'] as List?) ?? [])
+              .map((e) => Routine.fromJson((e as Map).cast<String, dynamic>())));
+        weeklyPlan.clear();
+        ((data['weeklyPlan'] as Map?) ?? {}).forEach((k, v) {
+          final day = int.tryParse(k.toString());
+          if (day != null && v is String) weeklyPlan[day] = v;
+        });
+        customExercises
+          ..clear()
+          ..addAll(((data['custom'] as List?) ?? [])
+              .map((e) => Exercise.fromJson((e as Map).cast<String, dynamic>())));
+        _loadMedia(data);
+        _loadRepsOnly(data);
+        _loadExerciseRest(data);
+        sessions
+          ..clear()
+          ..addAll(((data['sessions'] as List?) ?? [])
+              .map((e) => LoggedSession.fromJson((e as Map).cast<String, dynamic>())));
+        bodyweight
+          ..clear()
+          ..addAll(((data['bodyweight'] as List?) ?? [])
+              .map((e) => BodyweightEntry.fromJson((e as Map).cast<String, dynamic>())));
+        _loadMeasures(data);
+        _loadShots(data);
+        awards
+          ..clear()
+          ..addAll(((data['awards'] as Map?) ?? const {}).map((k, v) =>
+              MapEntry(k as String, DateTime.tryParse(v as String? ?? '') ?? DateTime.now())));
+        awardsSeen
+          ..clear()
+          ..addAll(((data['awardsSeen'] as List?) ?? const []).cast<String>());
+        moments
+          ..clear()
+          ..addAll(((data['moments'] as List?) ?? const [])
+              .map((e) => Moment.fromJson((e as Map).cast<String, dynamic>())));
+        photoIntervalDays = (data['photoEvery'] as num?)?.toInt() ?? 30;
+        bodyTimeline = data['bodyTl'] as bool? ?? false;
+        _restoreLiveSession(data);
       }
-
-      themePref = _themeFrom(data, fallback: 'dark');
-      units = data['units'] as String? ?? 'kg';
-
-      _applyLanguage(data['language'] as String? ?? language);
-      restSeconds = (data['rest'] as num?)?.toInt() ?? 90;
-      alarmSound = data['alarmSound'] as String?;
-      alarmSoundName = data['alarmSoundName'] as String?;
-      RestAlarm.instance.customSoundPath = alarmSoundPath;
-
-      if (alarmSoundPath == null) {
-        alarmSound = null;
-        alarmSoundName = null;
-      }
-      bgPattern = data['bg'] as String? ?? 'dots';
-      heatTone = data['heatTone'] as String? ?? 'ember';
-      _loadToggles(data);
-      alarmAskedAt = (data['alarmAskedAt'] as num?)?.toInt();
-      onboarded = data['onboarded'] as bool? ?? false;
-      favorites
-        ..clear()
-        ..addAll(((data['favorites'] as Map?) ?? {}).map((k, v) => MapEntry(k as String, v as bool)));
-      _loadNotes(data);
-      _loadPlaces(data);
-      checkins
-        ..clear()
-        ..addAll(((data['checkins'] as List?) ?? []).cast<String>());
-      routines
-        ..clear()
-        ..addAll(((data['routines'] as List?) ?? [])
-            .map((e) => Routine.fromJson((e as Map).cast<String, dynamic>())));
-      weeklyPlan
-        ..clear()
-        ..addAll(((data['weeklyPlan'] as Map?) ?? {})
-            .map((k, v) => MapEntry(int.parse(k as String), v as String)));
-      customExercises
-        ..clear()
-        ..addAll(((data['custom'] as List?) ?? [])
-            .map((e) => Exercise.fromJson((e as Map).cast<String, dynamic>())));
-      _loadMedia(data);
-      _loadRepsOnly(data);
-      _loadExerciseRest(data);
-      sessions
-        ..clear()
-        ..addAll(((data['sessions'] as List?) ?? [])
-            .map((e) => LoggedSession.fromJson((e as Map).cast<String, dynamic>())));
-      bodyweight
-        ..clear()
-        ..addAll(((data['bodyweight'] as List?) ?? [])
-            .map((e) => BodyweightEntry.fromJson((e as Map).cast<String, dynamic>())));
-      _loadMeasures(data);
-      _loadShots(data);
-      awards
-        ..clear()
-        ..addAll(((data['awards'] as Map?) ?? const {}).map((k, v) =>
-            MapEntry(k as String, DateTime.tryParse(v as String? ?? '') ?? DateTime.now())));
-      awardsSeen
-        ..clear()
-        ..addAll(((data['awardsSeen'] as List?) ?? const []).cast<String>());
-      moments
-        ..clear()
-        ..addAll(((data['moments'] as List?) ?? const [])
-            .map((e) => Moment.fromJson((e as Map).cast<String, dynamic>())));
-      photoIntervalDays = (data['photoEvery'] as num?)?.toInt() ?? 30;
-      bodyTimeline = data['bodyTl'] as bool? ?? false;
-      _restoreLiveSession(data);
+      _stampMemberSince();
+      _seedCalculatorsFromProfile();
+    } finally {
+      _loading = false;
     }
-    _stampMemberSince();
-    _seedCalculatorsFromProfile();
-    _loading = false;
     refreshAwards(silent: true);
     pendingAwards.clear();
     if (gamification) pendingAwards.addAll(unseenAwards);
@@ -430,9 +434,57 @@ class FitState extends FitCore
 
   bool importJson(String raw) {
     final map = Store.instance.tryParse(raw);
-    if (map == null) return false;
-    applyBackup(map);
-    return true;
+    if (map == null || !validateBackupMap(map)) return false;
+    try {
+      applyBackup(map);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Validates that backup collections can be parsed cleanly before any
+  /// destructive restore step (such as clearing MediaStore) runs.
+  bool validateBackupMap(Map<String, dynamic> map) {
+    try {
+      if (map['profile'] != null) {
+        Profile.fromJson((map['profile'] as Map).cast<String, dynamic>());
+      }
+      for (final e in (map['routines'] as List?) ?? const []) {
+        Routine.fromJson((e as Map).cast<String, dynamic>());
+      }
+      for (final e in (map['custom'] as List?) ?? const []) {
+        Exercise.fromJson((e as Map).cast<String, dynamic>());
+      }
+      for (final e in (map['sessions'] as List?) ?? const []) {
+        LoggedSession.fromJson((e as Map).cast<String, dynamic>());
+      }
+      for (final e in (map['bodyweight'] as List?) ?? const []) {
+        BodyweightEntry.fromJson((e as Map).cast<String, dynamic>());
+      }
+      for (final e in (map['measures'] as List?) ?? const []) {
+        BodyMeasure.fromJson((e as Map).cast<String, dynamic>());
+      }
+      for (final e in (map['shots'] as List?) ?? const []) {
+        ProgressEntry.fromJson((e as Map).cast<String, dynamic>());
+      }
+      for (final e in (map['moments'] as List?) ?? const []) {
+        Moment.fromJson((e as Map).cast<String, dynamic>());
+      }
+      if (map['places'] is List) {
+        for (final e in map['places'] as List) {
+          GymPlace.fromJson((e as Map).cast<String, dynamic>());
+        }
+      }
+      if (map['notes'] is List) {
+        for (final e in map['notes'] as List) {
+          GymNote.fromJson((e as Map).cast<String, dynamic>());
+        }
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   void applyBackup(Map<String, dynamic> map,
@@ -441,54 +493,59 @@ class FitState extends FitCore
       Map<String, String>? restoredShots,
       Map<String, String>? restoredMoments}) {
     _loading = true;
-    profile = Profile.fromJson((map['profile'] as Map?)?.cast<String, dynamic>() ?? {});
-    themePref = _themeFrom(map, fallback: themePref);
-    units = map['units'] as String? ?? units;
-    _applyLanguage(map['language'] as String? ?? language);
-    restSeconds = (map['rest'] as num?)?.toInt() ?? restSeconds;
-    bgPattern = map['bg'] as String? ?? bgPattern;
-    _loadToggles(map);
-    onboarded = map['onboarded'] as bool? ?? onboarded;
-    favorites
-      ..clear()
-      ..addAll(((map['favorites'] as Map?) ?? {}).map((k, v) => MapEntry(k as String, v as bool)));
-    _loadPlaces(map);
-    _loadNotes(map);
-    if (restoredNoteMedia != null) _remapNoteMedia(restoredNoteMedia);
-    checkins
-      ..clear()
-      ..addAll(((map['checkins'] as List?) ?? []).cast<String>());
-    routines
-      ..clear()
-      ..addAll(((map['routines'] as List?) ?? [])
-          .map((e) => Routine.fromJson((e as Map).cast<String, dynamic>())));
-    weeklyPlan
-      ..clear()
-      ..addAll(((map['weeklyPlan'] as Map?) ?? {})
-          .map((k, v) => MapEntry(int.parse(k as String), v as String)));
-    customExercises
-      ..clear()
-      ..addAll(((map['custom'] as List?) ?? [])
-          .map((e) => Exercise.fromJson((e as Map).cast<String, dynamic>())));
-    _loadMedia(map, restored: restoredMedia);
-    _loadRepsOnly(map);
-    _loadExerciseRest(map);
-    sessions
-      ..clear()
-      ..addAll(((map['sessions'] as List?) ?? [])
-          .map((e) => LoggedSession.fromJson((e as Map).cast<String, dynamic>())));
-    bodyweight
-      ..clear()
-      ..addAll(((map['bodyweight'] as List?) ?? [])
-          .map((e) => BodyweightEntry.fromJson((e as Map).cast<String, dynamic>())));
-    _loadMeasures(map);
-    _loadShots(map, restored: restoredShots);
-    _loadAwards(map);
-    _loadMoments(map, restored: restoredMoments);
-    photoIntervalDays = (map['photoEvery'] as num?)?.toInt() ?? photoIntervalDays;
-    bodyTimeline = map['bodyTl'] as bool? ?? bodyTimeline;
-    _seedCalculatorsFromProfile();
-    _loading = false;
+    try {
+      profile = Profile.fromJson((map['profile'] as Map?)?.cast<String, dynamic>() ?? {});
+      themePref = _themeFrom(map, fallback: themePref);
+      units = map['units'] as String? ?? units;
+      _applyLanguage(map['language'] as String? ?? language);
+      restSeconds = (map['rest'] as num?)?.toInt() ?? restSeconds;
+      bgPattern = map['bg'] as String? ?? bgPattern;
+      heatTone = map['heatTone'] as String? ?? heatTone;
+      _loadToggles(map);
+      onboarded = map['onboarded'] as bool? ?? onboarded;
+      favorites
+        ..clear()
+        ..addAll(((map['favorites'] as Map?) ?? {}).map((k, v) => MapEntry(k as String, v as bool)));
+      _loadPlaces(map);
+      _loadNotes(map);
+      if (restoredNoteMedia != null) _remapNoteMedia(restoredNoteMedia);
+      checkins
+        ..clear()
+        ..addAll(((map['checkins'] as List?) ?? []).cast<String>());
+      routines
+        ..clear()
+        ..addAll(((map['routines'] as List?) ?? [])
+            .map((e) => Routine.fromJson((e as Map).cast<String, dynamic>())));
+      weeklyPlan.clear();
+      ((map['weeklyPlan'] as Map?) ?? {}).forEach((k, v) {
+        final day = int.tryParse(k.toString());
+        if (day != null && v is String) weeklyPlan[day] = v;
+      });
+      customExercises
+        ..clear()
+        ..addAll(((map['custom'] as List?) ?? [])
+            .map((e) => Exercise.fromJson((e as Map).cast<String, dynamic>())));
+      _loadMedia(map, restored: restoredMedia);
+      _loadRepsOnly(map);
+      _loadExerciseRest(map);
+      sessions
+        ..clear()
+        ..addAll(((map['sessions'] as List?) ?? [])
+            .map((e) => LoggedSession.fromJson((e as Map).cast<String, dynamic>())));
+      bodyweight
+        ..clear()
+        ..addAll(((map['bodyweight'] as List?) ?? [])
+            .map((e) => BodyweightEntry.fromJson((e as Map).cast<String, dynamic>())));
+      _loadMeasures(map);
+      _loadShots(map, restored: restoredShots);
+      _loadAwards(map);
+      _loadMoments(map, restored: restoredMoments);
+      photoIntervalDays = (map['photoEvery'] as num?)?.toInt() ?? photoIntervalDays;
+      bodyTimeline = map['bodyTl'] as bool? ?? bodyTimeline;
+      _seedCalculatorsFromProfile();
+    } finally {
+      _loading = false;
+    }
     _persist();
     _refreshWidgets();
     notifyListeners();

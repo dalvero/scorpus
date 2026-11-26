@@ -27,15 +27,14 @@ class ExerciseDetailScreen extends StatefulWidget {
 }
 
 class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
-  late final String _exId = fit.activeExerciseId ?? fit.activeExercise.id;
-
   String _fmtDate(DateTime d) => t.shortDate(d);
 
   Future<void> _pickMedia() async {
+    final exId = fit.activeExercise.id;
     try {
       final res = await FilePicker.platform.pickFiles(type: FileType.media);
       final path = res?.files.single.path;
-      if (path != null) await fit.attachExerciseMedia(_exId, path);
+      if (path != null) await fit.attachExerciseMedia(exId, path);
     } catch (_) {}
   }
 

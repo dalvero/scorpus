@@ -204,7 +204,9 @@ mixin StatsState on FitCore, ToolsState, LibraryState, TimelineState {
 
   void setLoggedReps(LoggedExercise e, int i, int reps) {
     if (i < 0 || i >= e.sets.length) return;
-    e.sets[i] = LoggedSet(reps.clamp(0, 999), e.sets[i].weight);
+    final old = e.sets[i];
+    e.sets[i] = LoggedSet(reps.clamp(0, 999), old.weight,
+        kind: old.kind, rpe: old.rpe, sec: old.sec, km: old.km);
     persistNow();
     _refreshWidgets();
     notifyListeners();
@@ -212,7 +214,9 @@ mixin StatsState on FitCore, ToolsState, LibraryState, TimelineState {
 
   void setLoggedWeight(LoggedExercise e, int i, double kg) {
     if (i < 0 || i >= e.sets.length) return;
-    e.sets[i] = LoggedSet(e.sets[i].reps, _round3(kg.clamp(0, 1000)));
+    final old = e.sets[i];
+    e.sets[i] = LoggedSet(old.reps, _round3(kg.clamp(0, 1000)),
+        kind: old.kind, rpe: old.rpe, sec: old.sec, km: old.km);
     persistNow();
     _refreshWidgets();
     notifyListeners();
@@ -231,7 +235,10 @@ mixin StatsState on FitCore, ToolsState, LibraryState, TimelineState {
 
   void addLoggedSet(LoggedExercise e) {
     final last = e.sets.isNotEmpty ? e.sets.last : LoggedSet(10, isRepsOnly(e.id) ? 0 : 20);
-    e.sets.add(LoggedSet(last.reps, last.weight));
+    e.sets.add(LoggedSet(last.reps, last.weight,
+        kind: last.kind == SetKind.warmup ? SetKind.normal : last.kind,
+        sec: last.sec,
+        km: last.km));
     persistNow();
     _refreshWidgets();
     notifyListeners();

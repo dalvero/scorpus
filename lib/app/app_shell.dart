@@ -346,7 +346,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       case 'exercises':
         return ExercisesScreen();
       case 'exercise-detail':
-        return ExerciseDetailScreen();
+        return ExerciseDetailScreen(key: ValueKey(fit.activeExerciseId));
       case 'tools':
         return ToolsScreen();
       case 'tools-detail':

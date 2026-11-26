@@ -29,6 +29,7 @@ class AlarmStore {
 
   static String? pathFor(String? basename) {
     if (_dir == null || basename == null || basename.isEmpty) return null;
+    if (basename.contains('/') || basename.contains('\\') || basename.contains('..')) return null;
     final p = '$_dir/$basename';
     return File(p).existsSync() ? p : null;
   }
@@ -75,6 +76,7 @@ class AlarmStore {
   static String _ext(String path) {
     final dot = path.lastIndexOf('.');
     if (dot < 0 || dot == path.length - 1) return 'mp3';
-    return path.substring(dot + 1).toLowerCase();
+    final cleaned = path.substring(dot + 1).toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return cleaned.isEmpty ? 'mp3' : cleaned;
   }
 }

@@ -114,6 +114,8 @@ Future<bool> restoreBackupZip(Uint8List zipBytes) async {
     return false;
   }
 
+  if (!fit.validateBackupMap(data)) return false;
+
   await MediaStore.clearAll();
   final wanted = <String, String>{};
   ((data['media'] as Map?) ?? {}).forEach((k, v) {

@@ -120,10 +120,8 @@ Tujuan: Menjaga performa untuk pemakaian bertahun-tahun.
 
 ---
 
-## 4. Poin yang Perlu Kita Diskusikan Selanjutnya
+## 4. Keputusan yang Sudah Disepakati
 
-Sebelum mulai coding di Fase 0, beberapa hal yang perlu kita sepakati bersama:
-1. **Seri Huawei SmartBand kamu apa?** (Misal: Huawei Band 8 / 9 / 10 / Watch Fit?) — ini menentukan apakah bisa pakai **Gadgetbridge** (gratis 100%) atau lebih cocok pakai **Health Sync** -> **Health Connect**.
-2. **Apakah kamu pakai Wear OS atau iOS?** Jika hanya Android Phone + Huawei SmartBand, kita bisa fokus 100% ke Android agar kerja lebih cepat.
-3. **Apakah kamu tetap setuju 100% Offline-First + Auto-Backup lokal/Drive**, atau ada alasan khusus yang membuatmu tetap ingin punya database online / web dashboard?
-4. **Prioritas mulai dari mana:** Apakah langsung eksekusi **Fase 0 (Init Git + Fix Bug Kritis)** dulu, atau ada fitur tertentu yang ingin didahulukan?
+1. **Wearable:** **Huawei SmartBand 11** -> karena seri baru, jalur integrasi Fase 2 dikunci ke **Huawei Health -> Health Sync -> Android Health Connect -> Scorpus**.
+2. **Arsitektur & Platform:** **100% Offline-First + Auto-Backup** (tanpa backend online / login-register), fokus penuh di **Android Phone**.
+3. **Alur Rilis:** Fase 0 (bug kritis & keamanan data) selesai -> integrasi **Shorebird** -> build APK untuk instalasi di ponsel pribadi.
