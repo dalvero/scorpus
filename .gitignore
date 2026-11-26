@@ -67,8 +67,10 @@ test/preview/
 test/preview_*.dart
 test/marketing_shots.dart
 site/
-docs/
 
 # OS junk
 Thumbs.db
 desktop.ini
+
+# Dokumentasi
+docs/
